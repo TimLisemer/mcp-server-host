@@ -104,7 +104,7 @@ user=root
 
 ENDCONFIG
     
-    ((server_count++))
+    server_count=$((server_count + 1))
     echo "  Configured $name"
 done <<< "$servers"
 

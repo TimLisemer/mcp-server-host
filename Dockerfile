@@ -39,7 +39,7 @@ RUN mkdir -p /app/servers /app/config /app/scripts /app/data /workspace /var/log
 # Copy configuration and scripts
 COPY config/ /app/config/
 COPY scripts/ /app/scripts/
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY supervisord.conf /etc/supervisor/supervisord.conf
 COPY entrypoint.sh /app/entrypoint.sh
 
 # Make scripts executable
@@ -62,4 +62,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Entry point
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]

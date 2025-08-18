@@ -9,7 +9,7 @@ echo "CONFIG_PATH: ${MCP_SERVERS_CONFIG}"
 echo "----------------------------------------"
 
 # Ensure directories exist
-mkdir -p /workspace /app/data /var/log/mcp /var/run
+mkdir -p /workspace /app/data /var/log/mcp /var/run /var/log/supervisor
 
 # Generate supervisor configuration from servers.json
 echo "Generating supervisor configuration..."
