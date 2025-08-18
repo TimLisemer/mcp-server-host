@@ -4,12 +4,12 @@ A modular Docker container for hosting multiple MCP (Model Context Protocol) ser
 
 ## Features
 
-- **Multi-Language Support**: Go, Rust, Node.js, Python
+- **Multi-Language Support**: Go, Rust, Node.js, Python (with virtual environments)
 - **Modular Architecture**: Easy to add/remove servers via JSON configuration
-- **Process Management**: Supervisor handles all MCP servers
-- **Remote Access**: SSH + docker exec integration
+- **Process Management**: Supervisor handles all MCP servers automatically
+- **Remote Access**: SSH + docker exec integration for Claude Desktop
 - **Health Monitoring**: Built-in health checks and logging
-- **NixOS Ready**: Designed for integration with NixOS configurations
+- **Virtual Environment Support**: Python servers run in isolated environments
 
 ## Quick Start
 
@@ -29,83 +29,38 @@ make logs
 
 ```
 mcp-server-host/
-├── Dockerfile                    # Multi-stage build for all languages
+├── Dockerfile                    # Ubuntu 25.04 with multi-language support
 ├── docker-compose.yml           # Container orchestration
 ├── Makefile                     # Management commands
 ├── entrypoint.sh               # Container startup script
-├── supervisord.conf            # Process management
+├── supervisord.conf            # Process management configuration
 ├── config/
-│   └── servers.json           # Server configuration
+│   └── servers.json           # MCP server configuration
 ├── scripts/
-│   ├── install-servers.sh     # Server installation
-│   ├── start-servers.sh       # Supervisor config generation
+│   ├── install-servers.sh     # Automated server installation
+│   ├── start-servers.sh       # Dynamic supervisor config generation
 │   └── health-check.sh        # Health monitoring
 └── README.md                  # This file
 ```
 
-## Configuration
+## Currently Running Servers
 
-### Adding a New MCP Server
+### 1. MCP Language Server (Go)
+- **Type**: Go-based LSP integration
+- **Capabilities**: Rust, Go, Python, TypeScript language support via rust-analyzer
+- **Repository**: [isaacphi/mcp-language-server](https://github.com/isaacphi/mcp-language-server)
+- **Binary Path**: `/root/go/bin/mcp-language-server`
 
-Edit `config/servers.json`:
-
-```json
-{
-  "servers": {
-    "your-server": {
-      "enabled": true,
-      "type": "rust",
-      "description": "Your custom MCP server",
-      "repository": "https://github.com/you/your-mcp-server",
-      "build_command": "cargo build --release",
-      "binary_path": "./target/release/your-server",
-      "capabilities": ["feature1", "feature2"]
-    }
-  }
-}
-```
-
-Then rebuild:
-
-```bash
-make rebuild
-```
-
-### Server Types
-
-- **go**: Go-based servers (uses `go build`)
-- **rust**: Rust-based servers (uses `cargo build`)
-- **node**: Node.js servers (uses `npm install/build`)
-- **python**: Python servers (uses `pip install`)
-
-## NixOS Integration
-
-Add to your NixOS configuration:
-
-```nix
-virtualisation.oci-containers.containers = {
-  mcp-server-host = {
-    image = "mcp-server-host:latest";
-    autoStart = true;
-    autoRemoveOnStop = false;
-    extraOptions = ["--network=docker-network" "--ip=172.18.0.15"];
-    volumes = [
-      "/mnt/docker-data/volumes/mcp-workspace:/workspace:rw"
-      "/mnt/docker-data/volumes/mcp-data:/app/data:rw"
-      "/mnt/docker-data/volumes/mcp-logs:/var/log:rw"
-      "/var/run/docker.sock:/var/run/docker.sock:rw"
-    ];
-    environment = {
-      LOG_LEVEL = "info";
-      WORKSPACE_PATH = "/workspace";
-    };
-  };
-};
-```
+### 2. MCP NixOS Server (Python)
+- **Type**: Python-based NixOS package search
+- **Capabilities**: NixOS package search, configuration assistance
+- **Repository**: [utensils/mcp-nixos](https://github.com/utensils/mcp-nixos)
+- **Virtual Environment**: `/app/servers/mcp-nixos/venv/`
+- **Runtime**: Python 3.13 with isolated dependencies
 
 ## Claude Desktop Configuration
 
-Configure Claude Desktop to use remote MCP servers:
+Configure Claude Desktop to use the remote MCP servers:
 
 ```json
 {
@@ -116,257 +71,203 @@ Configure Claude Desktop to use remote MCP servers:
         "tim@tim-server",
         "docker", "exec", "mcp-server-host",
         "/root/go/bin/mcp-language-server",
-        "--workspace", "/workspace/rust-project",
+        "--workspace", "/workspace/your-rust-project",
         "--lsp", "rust-analyzer"
       ]
     },
-    "rust-docs": {
+    "nixos-search": {
       "command": "ssh",
       "args": [
         "tim@tim-server",
         "docker", "exec", "mcp-server-host",
-        "/app/servers/rust-docs/target/release/rust-docs-mcp-server",
-        "--crate", "tokio"
-      ]
-    },
-    "tailwind-svelte": {
-      "command": "ssh",
-      "args": [
-        "tim@tim-server",
-        "docker", "exec", "mcp-server-host",
-        "node", "/app/servers/tailwind-svelte/dist/index.js"
+        "/app/servers/mcp-nixos/venv/bin/python3",
+        "-m", "mcp_nixos.server"
       ]
     }
   }
 }
 ```
 
-## Pre-configured Servers
+## Configuration
 
-### 1. Language Server (Go)
-- LSP integration for multiple languages
-- Supports: Rust, Go, Python, TypeScript
-- Repository: [mcp-language-server](https://github.com/garrettguan/mcp-language-server)
+### Current Server Configuration
 
-### 2. Rust Docs (Rust)
-- Documentation server with semantic search
-- No OpenAI key required
-- Repository: [mcp-rust-docs](https://github.com/shaman-apprentice/mcp-rust-docs)
+The `config/servers.json` file contains our working servers:
 
-### 3. Tailwind Svelte Assistant (Node.js)
-- SvelteKit + Tailwind component generation
-- Repository: [tailwind-svelte-mcp](https://github.com/keturiosakys/tailwind-svelte-mcp)
+```json
+{
+  "servers": {
+    "mcp-language-server": {
+      "enabled": true,
+      "type": "go",
+      "description": "MCP Language Server with Rust support via rust-analyzer",
+      "repository": "https://github.com/isaacphi/mcp-language-server",
+      "build_command": "go install github.com/isaacphi/mcp-language-server@latest",
+      "binary_path": "/root/go/bin/mcp-language-server",
+      "install_path": "/root/go/bin/mcp-language-server",
+      "capabilities": ["lsp", "rust", "go", "python", "typescript"],
+      "default_args": ["--workspace", "/workspace", "--lsp", "rust-analyzer"]
+    },
+    "mcp-nixos": {
+      "enabled": true,
+      "type": "python",
+      "description": "NixOS package and configuration search MCP server",
+      "repository": "https://github.com/utensils/mcp-nixos",
+      "build_command": "pip install -e .",
+      "binary_path": "python3 -m mcp_nixos.server",
+      "install_path": "python3 -m mcp_nixos.server",
+      "capabilities": ["nixos", "packages", "search", "configuration"],
+      "default_args": [],
+      "environment": {
+        "ELASTICSEARCH_URL": "https://search.nixos.org/backend"
+      }
+    }
+  }
+}
+```
 
-### 4. Code Runner (Node.js)
-- Multi-language code execution
-- Supports: Python, JavaScript, Bash
+### Adding New Servers
 
-### 5. NixOS MCP (Node.js)
-- NixOS system management
-- Configuration generation and deployment
+To add a new MCP server:
+
+1. **Edit `config/servers.json`** - Add your server configuration
+2. **Run `make rebuild`** - Rebuild and restart the container
+3. **Update Claude Desktop config** - Add the new server to your MCP configuration
+
+### Supported Server Types
+
+- **go**: Go-based servers (uses `go install` or `go build`)
+- **rust**: Rust-based servers (uses `cargo build --release`)
+- **node**: Node.js servers (uses `npm install` and optional `npm run build`)
+- **python**: Python servers (creates virtual environment and uses `pip install`)
+
+## Docker Infrastructure
+
+### Base Image
+- **Ubuntu 25.04** with Python 3.13 support
+- **Multi-language toolchain**: Go 1.24+, Rust (latest), Node.js 20, Python 3.13
+- **rust-analyzer** pre-installed for Rust language support
+
+### Volume Mounts
+```yaml
+volumes:
+  - ./workspace:/workspace:rw     # Shared workspace
+  - ./data:/app/data:rw          # Persistent data
+  - ./logs:/var/log:rw           # Log files
+  - ./config:/app/config:ro      # Configuration (read-only)
+```
 
 ## Management Commands
 
 ```bash
-# Basic Operations
+# Container Operations
 make build          # Build Docker image
 make start          # Start container
 make stop           # Stop container
 make restart        # Restart container
-make rebuild        # Clean rebuild
+make rebuild        # Clean rebuild (recommended after config changes)
 
 # Monitoring
 make logs           # View container logs
-make health         # Health check
-make status         # Show server status
+make health         # Run health check
+make status         # Show MCP server status
 make supervisor-logs # View supervisor logs
-make server-logs    # View specific server logs
+make server-logs    # View specific server logs (prompts for server name)
 
 # Development
 make shell          # Open container shell
 make ssh-test       # Test SSH connectivity
-make update-config  # Update configuration
-make info          # Show container info
+make update-config  # Update configuration without rebuild
+make info          # Show container information
+```
 
-# Deployment
-make deploy         # Production deployment
-make clean         # Remove everything
+## Technical Details
+
+### Python Virtual Environments
+Python servers automatically get isolated virtual environments:
+- Created at `/app/servers/{server-name}/venv/`
+- Dependencies installed via pip in the virtual environment
+- Supervisor uses the venv Python binary: `/app/servers/{server-name}/venv/bin/python3`
+
+### Process Management
+- **Supervisor** manages all MCP servers as background processes
+- Automatic restart on failure
+- Structured logging to `/var/log/mcp/`
+- Health monitoring and status reporting
+
+### Networking
+- Container runs without special network requirements
+- Accessible via `docker exec` commands over SSH
+- No exposed ports needed for MCP communication
+
+## Troubleshooting
+
+### Check Server Status
+```bash
+# View all servers
+make status
+
+# Check specific server logs
+docker exec mcp-server-host tail -n 50 /var/log/mcp/mcp-language-server.err.log
+docker exec mcp-server-host tail -n 50 /var/log/mcp/mcp-nixos.err.log
+```
+
+### Test Servers Individually
+```bash
+# Test language server
+docker exec mcp-server-host /root/go/bin/mcp-language-server --help
+
+# Test NixOS server
+docker exec mcp-server-host /app/servers/mcp-nixos/venv/bin/python3 -m mcp_nixos.server --help
+```
+
+### Restart Failed Servers
+```bash
+# Restart specific server
+docker exec mcp-server-host supervisorctl restart mcp-mcp-nixos
+docker exec mcp-server-host supervisorctl restart mcp-mcp-language-server
+
+# Restart all servers
+docker exec mcp-server-host supervisorctl restart all
+```
+
+### SSH Access Issues
+```bash
+# Test SSH connection
+ssh tim@tim-server "docker exec mcp-server-host echo 'SSH works'"
+
+# Test specific MCP server via SSH
+ssh tim@tim-server "docker exec mcp-server-host /root/go/bin/mcp-language-server --help"
 ```
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LOG_LEVEL` | `info` | Logging level (debug, info, warn, error) |
-| `WORKSPACE_PATH` | `/workspace` | Working directory for MCP servers |
+| `LOG_LEVEL` | `info` | Logging level for MCP servers |
+| `WORKSPACE_PATH` | `/workspace` | Working directory for projects |
 | `MCP_SERVERS_CONFIG` | `/app/config/servers.json` | Server configuration file |
 
-## Volumes
+## Docker Compose Integration
 
-| Container Path | Purpose |
-|----------------|---------|
-| `/workspace` | Shared workspace for all servers |
-| `/app/data` | Persistent data storage |
-| `/var/log` | Log files |
-| `/app/config` | Server configuration (read-only) |
-
-## SSH Access
-
-### Setup SSH Key Authentication
-
-On your local machine:
-
-```bash
-# Generate SSH key if needed
-ssh-keygen -t ed25519 -C "mcp-server-access"
-
-# Copy to NixOS server
-ssh-copy-id tim@tim-server
-```
-
-### Test Connection
-
-```bash
-# Test SSH to container
-make ssh-test
-
-# Manual test
-ssh tim@tim-server "docker exec mcp-server-host echo 'Connected!'"
-```
-
-## Troubleshooting
-
-### Container Won't Start
-
-```bash
-# Check logs
-docker-compose logs
-
-# Verify configuration
-docker exec mcp-server-host cat /app/config/servers.json
-
-# Check supervisor status
-docker exec mcp-server-host supervisorctl status
-```
-
-### Server Not Working
-
-```bash
-# Check specific server logs
-docker exec mcp-server-host tail -n 100 /var/log/mcp/[server-name].err.log
-
-# Restart specific server
-docker exec mcp-server-host supervisorctl restart mcp-[server-name]
-```
-
-### SSH Connection Issues
-
-```bash
-# Test basic SSH
-ssh tim@tim-server echo "SSH works"
-
-# Test Docker access
-ssh tim@tim-server docker ps
-
-# Check container name
-ssh tim@tim-server docker ps --filter name=mcp-server-host
-```
-
-## Adding Custom Servers
-
-### Example: Adding a Python MCP Server
-
-1. Edit `config/servers.json`:
-
-```json
-{
-  "servers": {
-    "python-analyzer": {
-      "enabled": true,
-      "type": "python",
-      "description": "Python code analyzer",
-      "repository": "https://github.com/example/python-mcp",
-      "build_command": "pip install -r requirements.txt",
-      "binary_path": "python main.py",
-      "capabilities": ["analyze", "lint", "format"]
-    }
-  }
-}
-```
-
-2. Rebuild container:
-
-```bash
-make rebuild
-```
-
-3. Configure Claude Desktop:
-
-```json
-{
-  "mcpServers": {
-    "python-analyzer": {
-      "command": "ssh",
-      "args": [
-        "tim@tim-server",
-        "docker", "exec", "mcp-server-host",
-        "python3", "/app/servers/python-analyzer/main.py"
-      ]
-    }
-  }
-}
-```
-
-## Security Considerations
-
-- Container runs with limited privileges
-- SSH access requires key authentication
-- Logs are rotated to prevent disk fill
-- Health checks monitor resource usage
-- Network isolation via Docker networks
-
-## Performance Tuning
-
-### Memory Limits
-
-Add to `docker-compose.yml`:
+The container runs without network dependencies:
 
 ```yaml
+version: '3.8'
 services:
   mcp-server-host:
-    mem_limit: 4g
-    memswap_limit: 4g
+    build: .
+    image: mcp-server-host:latest
+    container_name: mcp-server-host
+    restart: unless-stopped
+    volumes:
+      - ./workspace:/workspace:rw
+      - ./data:/app/data:rw
+      - ./logs:/var/log:rw
+      - ./config:/app/config:ro
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - WORKSPACE_PATH=/workspace
+    ports:
+      - "8080:8080"  # Optional: for web-based servers
 ```
-
-### CPU Limits
-
-```yaml
-services:
-  mcp-server-host:
-    cpus: '2.0'
-```
-
-## Contributing
-
-1. Fork the repository
-2. Add your server to `config/servers.json`
-3. Test with `make rebuild`
-4. Submit a pull request
-
-## License
-
-MIT License - See LICENSE file for details
-
-## Support
-
-For issues or questions:
-- Check the [Troubleshooting](#troubleshooting) section
-- Review container logs: `make logs`
-- Open an issue on GitHub
-
-## Acknowledgments
-
-Built for seamless integration with:
-- [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
-- [Claude Desktop](https://claude.ai/desktop)
-- [NixOS](https://nixos.org/)
