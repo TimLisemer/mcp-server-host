@@ -8,14 +8,10 @@ services:
     image: mcp-server-host:latest
     container_name: mcp-server-host
     restart: unless-stopped
-    networks:
-      docker-network:
-        ipv4_address: 172.18.0.15
     volumes:
-      - /mnt/docker-data/volumes/mcp-workspace:/workspace:rw
-      - /mnt/docker-data/volumes/mcp-data:/app/data:rw
-      - /mnt/docker-data/volumes/mcp-logs:/var/log:rw
-      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - ./workspace:/workspace:rw
+      - ./data:/app/data:rw
+      - ./logs:/var/log:rw
       - ./config:/app/config:ro
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-info}
@@ -34,8 +30,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-networks:
-  docker-network:
-    external: true
-    name: docker-network

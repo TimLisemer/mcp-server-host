@@ -29,6 +29,9 @@ ENV GOPATH="/root/go"
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+# Install rust-analyzer for Rust LSP support
+RUN rustup component add rust-src rust-analyzer
+
 # Create app directory structure
 WORKDIR /app
 RUN mkdir -p /app/servers /app/config /app/scripts /app/data /workspace /var/log/mcp

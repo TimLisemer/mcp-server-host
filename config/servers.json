@@ -1,56 +1,18 @@
 {
   "servers": {
-    "language-server": {
+    "mcp-language-server": {
       "enabled": true,
       "type": "go",
-      "description": "LSP integration for Rust, Go, Python, TypeScript",
-      "repository": "https://github.com/garrettguan/mcp-language-server",
-      "build_command": "go build -o mcp-language-server .",
-      "binary_path": "./mcp-language-server",
+      "description": "MCP Language Server with Rust support via rust-analyzer",
+      "repository": "https://github.com/isaacphi/mcp-language-server",
+      "build_command": "go install github.com/isaacphi/mcp-language-server@latest",
+      "binary_path": "/root/go/bin/mcp-language-server",
       "install_path": "/root/go/bin/mcp-language-server",
       "capabilities": ["lsp", "rust", "go", "python", "typescript"],
-      "default_args": ["--workspace", "/workspace"]
-    },
-    "rust-docs": {
-      "enabled": true,
-      "type": "rust",
-      "description": "Documentation server with semantic search",
-      "repository": "https://github.com/shaman-apprentice/mcp-rust-docs",
-      "build_command": "cargo build --release",
-      "binary_path": "./target/release/rust-docs-mcp-server",
-      "install_path": "/app/servers/rust-docs/target/release/rust-docs-mcp-server",
-      "capabilities": ["documentation", "search"],
-      "default_args": ["--crate", "tokio"]
-    },
-    "tailwind-svelte": {
-      "enabled": true,
-      "type": "node",
-      "description": "SvelteKit + Tailwind component generation",
-      "repository": "https://github.com/keturiosakys/tailwind-svelte-mcp",
-      "build_command": "npm install && npm run build",
-      "binary_path": "node dist/index.js",
-      "install_path": "/app/servers/tailwind-svelte",
-      "capabilities": ["ui-components", "tailwind", "svelte"]
-    },
-    "code-runner": {
-      "enabled": true,
-      "type": "node",
-      "description": "Multi-language code execution",
-      "repository": "https://github.com/example/mcp-code-runner",
-      "build_command": "npm install",
-      "binary_path": "node index.js",
-      "install_path": "/app/servers/code-runner",
-      "capabilities": ["execute", "python", "javascript", "bash"]
-    },
-    "nixos-mcp": {
-      "enabled": true,
-      "type": "node",
-      "description": "NixOS system management",
-      "repository": "https://github.com/example/nixos-mcp",
-      "build_command": "npm install",
-      "binary_path": "node src/index.js",
-      "install_path": "/app/servers/nixos-mcp",
-      "capabilities": ["nixos", "system-management"]
+      "default_args": ["--workspace", "/workspace", "--lsp", "rust-analyzer"],
+      "environment": {
+        "LOG_LEVEL": "info"
+      }
     }
   }
 }

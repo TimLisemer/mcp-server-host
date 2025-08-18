@@ -86,7 +86,7 @@ while IFS= read -r server_json; do
     fi
     
     # Write supervisor program configuration
-    cat >> "$SUPERVISOR_CONF" <<EOF
+    cat >> "$SUPERVISOR_CONF" << ENDCONFIG
 [program:mcp-$name]
 command=$command
 directory=$server_dir
@@ -99,10 +99,10 @@ stdout_logfile_maxbytes=10MB
 stderr_logfile_maxbytes=10MB
 stdout_logfile_backups=2
 stderr_logfile_backups=2
-environment=PATH="/usr/local/go/bin:/root/go/bin:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",GOPATH="/root/go",NODE_ENV="production",LOG_LEVEL="%(ENV_LOG_LEVEL)s"
+environment=PATH="/usr/local/go/bin:/root/go/bin:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",GOPATH="/root/go",NODE_ENV="production",LOG_LEVEL="info"
 user=root
 
-EOF
+ENDCONFIG
     
     ((server_count++))
     echo "  Configured $name"
