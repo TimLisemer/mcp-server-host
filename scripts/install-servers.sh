@@ -76,9 +76,23 @@ while IFS= read -r server_json; do
             fi
             ;;
         "python")
+            # Create and activate virtual environment for this server
+            echo "  Creating virtual environment..."
+            python3 -m venv venv
+            source venv/bin/activate
+            
             if [ -f "requirements.txt" ]; then
-                pip3 install -r requirements.txt || echo "  Dependencies skipped"
+                pip install -r requirements.txt || echo "  Dependencies skipped"
             fi
+            # Execute the build command for Python servers (e.g., pip install)
+            if [[ "$build_cmd" == pip* ]]; then
+                # Replace pip3 with pip in venv
+                venv_build_cmd="${build_cmd/pip3/pip}"
+                eval "$venv_build_cmd" || echo "  Build command failed: $venv_build_cmd"
+            elif [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
+                pip install -e . || echo "  Local install failed"
+            fi
+            deactivate
             ;;
     esac
     

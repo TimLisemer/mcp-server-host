@@ -1,5 +1,5 @@
 # Multi-stage build for MCP server host
-FROM ubuntu:22.04 AS base
+FROM ubuntu:25.04 AS base
 
 # Install common dependencies
 RUN apt-get update && apt-get install -y \
@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     python3 \
     python3-pip \
+    python3-venv \
     jq \
     && rm -rf /var/lib/apt/lists/*
 

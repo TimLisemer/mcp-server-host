@@ -30,8 +30,14 @@ while IFS= read -r server_json; do
     
     # Determine the command based on type and paths
     if [ -n "$install_path" ] && [ "$install_path" != "null" ]; then
-        # Use install path if specified
-        command="$install_path"
+        # Use install path if specified, but for Python servers, check if we need venv
+        if [ "$type" = "python" ] && [ -f "$server_dir/venv/bin/python" ]; then
+            # Replace python3 with venv python path for Python servers
+            venv_python="$server_dir/venv/bin/python3"
+            command="${install_path/python3/$venv_python}"
+        else
+            command="$install_path"
+        fi
     else
         # Build command based on type
         case "$type" in
@@ -66,10 +72,20 @@ while IFS= read -r server_json; do
                 fi
                 ;;
             "python")
-                if [ -f "$server_dir/main.py" ]; then
-                    command="python3 $server_dir/main.py"
+                if [ -f "$server_dir/venv/bin/python" ]; then
+                    # Use virtual environment python
+                    venv_python="$server_dir/venv/bin/python"
+                    if [ -f "$server_dir/main.py" ]; then
+                        command="$venv_python $server_dir/main.py"
+                    elif [[ "$binary_path" == python* ]]; then
+                        # Replace python3 with venv python path
+                        command="${binary_path/python3/$venv_python}"
+                    else
+                        echo "Warning: No entry point found for $name"
+                        continue
+                    fi
                 else
-                    echo "Warning: No entry point found for $name"
+                    echo "Warning: Virtual environment not found for $name"
                     continue
                 fi
                 ;;

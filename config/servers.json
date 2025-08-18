@@ -13,6 +13,20 @@
       "environment": {
         "LOG_LEVEL": "info"
       }
+    },
+    "mcp-nixos": {
+      "enabled": true,
+      "type": "python",
+      "description": "NixOS package and configuration search MCP server",
+      "repository": "https://github.com/utensils/mcp-nixos",
+      "build_command": "pip3 install -e .",
+      "binary_path": "python3 -m mcp_nixos.server",
+      "install_path": "python3 -m mcp_nixos.server",
+      "capabilities": ["nixos", "packages", "search", "configuration"],
+      "default_args": [],
+      "environment": {
+        "ELASTICSEARCH_URL": "https://search.nixos.org/backend"
+      }
     }
   }
 }
