@@ -27,6 +27,20 @@
       "environment": {
         "ELASTICSEARCH_URL": "https://search.nixos.org/backend"
       }
+    },
+    "tailwind-svelte-assistant": {
+      "enabled": true,
+      "type": "node",
+      "description": "Tailwind CSS and SvelteKit documentation and code snippets MCP server",
+      "repository": "https://github.com/CaullenOmdahl/Tailwind-Svelte-Assistant",
+      "build_command": "npm install && npm run build",
+      "binary_path": "dist/index.js",
+      "install_path": "",
+      "capabilities": ["svelte", "tailwind", "documentation", "snippets", "components"],
+      "default_args": [],
+      "environment": {
+        "NODE_ENV": "production"
+      }
     }
   }
 }
