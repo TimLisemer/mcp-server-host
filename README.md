@@ -1,6 +1,6 @@
 # MCP Server Host
 
-A modular Docker container for hosting multiple MCP (Model Context Protocol) servers with remote SSH access support. Perfect for running MCP servers on a NixOS server or any Docker-compatible system.
+A modular Docker container for hosting multiple MCP (Model Context Protocol) servers with remote SSH access support. Perfect for running MCP servers on any Docker-compatible system.
 
 ## Features
 
@@ -43,96 +43,155 @@ mcp-server-host/
 └── README.md                  # This file
 ```
 
+## Server Status
+
+| Server | Status | Type | Description |
+|--------|--------|------|-------------|
+| mcp-language-server | **DISABLED** | Go | LSP integration with rust-analyzer support |
+| mcp-nixos | **ENABLED** | Python | NixOS package search and configuration |
+| tailwind-svelte-assistant | **ENABLED** | Node.js | Tailwind CSS and SvelteKit documentation |
+| context7 | **ENABLED** | Node.js | Up-to-date code documentation for LLMs |
+
 ## Currently Running Servers
 
-### 1. MCP Language Server (Go)
-- **Type**: Go-based LSP integration
-- **Capabilities**: Rust, Go, Python, TypeScript language support via rust-analyzer
-- **Repository**: [isaacphi/mcp-language-server](https://github.com/isaacphi/mcp-language-server)
-- **Binary Path**: `/root/go/bin/mcp-language-server`
-
-### 2. MCP NixOS Server (Python)
+### 1. MCP NixOS Server (Python) - ENABLED
 - **Type**: Python-based NixOS package search
 - **Capabilities**: NixOS package search, configuration assistance
 - **Repository**: [utensils/mcp-nixos](https://github.com/utensils/mcp-nixos)
 - **Virtual Environment**: `/app/servers/mcp-nixos/venv/`
 - **Runtime**: Python 3.13 with isolated dependencies
 
-## Claude Desktop Configuration
+### 2. Tailwind Svelte Assistant (Node.js) - ENABLED
+- **Type**: Node.js MCP server
+- **Capabilities**: Tailwind CSS classes, SvelteKit documentation, component snippets
+- **Repository**: [CaullenOmdahl/Tailwind-Svelte-Assistant](https://github.com/CaullenOmdahl/Tailwind-Svelte-Assistant)
+- **Runtime**: Node.js 20 with TypeScript
 
-Configure Claude Desktop to use the remote MCP servers:
+### 3. Context7 (Node.js) - ENABLED
+- **Type**: Node.js MCP server via npx
+- **Capabilities**: Real-time library documentation, code examples
+- **Repository**: [upstash/context7](https://github.com/upstash/context7)
+- **Runtime**: Executed via `npx @upstash/context7-mcp`
+- **Note**: For Claude Desktop/Cursor users, add a rule to auto-invoke Context7:
+  ```
+  [[calls]]
+  match = "when the user requests code examples, setup or configuration steps, or library/API documentation"
+  tool  = "context7"
+  ```
+
+### Disabled Servers
+
+#### MCP Language Server (Go) - DISABLED
+- **Type**: Go-based LSP integration
+- **Capabilities**: Rust, Go, Python, TypeScript language support via rust-analyzer
+- **Repository**: [isaacphi/mcp-language-server](https://github.com/isaacphi/mcp-language-server)
+- **To Enable**: Set `"enabled": true` in `config/servers.json`
+
+## Remote VPS Usage with Claude Code
+
+**This Docker setup is specifically designed for running MCP servers on a remote VPS and connecting to them via SSH.** Unlike typical local MCP integrations, this approach:
+
+1. **Centralizes all MCP servers** on a single remote host
+2. **Uses SSH + docker exec** to bridge MCP communication
+3. **Works with Claude Code, Claude Desktop, Cursor, and other MCP clients**
+4. **No local installation** of individual MCP servers required
+
+### How It Works
+
+The pattern for remote MCP server access:
+```
+[Claude Code] → SSH → [VPS] → docker exec → [MCP Server in Container]
+```
+
+### Claude Code Configuration
+
+Add this to your Claude Code settings to use MCP servers running on your remote VPS:
 
 ```json
 {
   "mcpServers": {
-    "language-server-rust": {
-      "command": "ssh",
-      "args": [
-        "tim@tim-server",
-        "docker", "exec", "mcp-server-host",
-        "/root/go/bin/mcp-language-server",
-        "--workspace", "/workspace/your-rust-project",
-        "--lsp", "rust-analyzer"
-      ]
-    },
     "nixos-search": {
       "command": "ssh",
       "args": [
-        "tim@tim-server",
+        "user@your-vps-ip",
         "docker", "exec", "mcp-server-host",
         "/app/servers/mcp-nixos/venv/bin/python3",
         "-m", "mcp_nixos.server"
+      ]
+    },
+    "tailwind-svelte": {
+      "command": "ssh",
+      "args": [
+        "user@your-vps-ip",
+        "docker", "exec", "mcp-server-host",
+        "node", "/app/servers/tailwind-svelte-assistant/dist/index.js"
+      ]
+    },
+    "context7": {
+      "command": "ssh",
+      "args": [
+        "user@your-vps-ip",
+        "docker", "exec", "mcp-server-host",
+        "npx", "-y", "@upstash/context7-mcp"
       ]
     }
   }
 }
 ```
+
+**Important**: Replace `user@your-vps-ip` with your actual VPS SSH credentials.
+
+### SSH Setup Requirements
+
+1. **SSH key authentication** configured between your local machine and VPS
+2. **Docker installed** on the VPS
+3. **User has docker permissions** (user in docker group or sudo access)
+4. **Container running** via `make start` on the VPS
 
 ## Configuration
 
 ### Current Server Configuration
 
-The `config/servers.json` file contains our working servers:
+The `config/servers.json` file controls which servers are active. Set `"enabled"` to `true` or `false` to control each server:
 
 ```json
 {
   "servers": {
     "mcp-language-server": {
-      "enabled": true,
+      "enabled": false,  // Currently DISABLED
       "type": "go",
-      "description": "MCP Language Server with Rust support via rust-analyzer",
-      "repository": "https://github.com/isaacphi/mcp-language-server",
-      "build_command": "go install github.com/isaacphi/mcp-language-server@latest",
-      "binary_path": "/root/go/bin/mcp-language-server",
-      "install_path": "/root/go/bin/mcp-language-server",
-      "capabilities": ["lsp", "rust", "go", "python", "typescript"],
-      "default_args": ["--workspace", "/workspace", "--lsp", "rust-analyzer"]
+      "description": "MCP Language Server with Rust support via rust-analyzer"
     },
     "mcp-nixos": {
-      "enabled": true,
+      "enabled": true,   // Currently ENABLED
       "type": "python",
-      "description": "NixOS package and configuration search MCP server",
-      "repository": "https://github.com/utensils/mcp-nixos",
-      "build_command": "pip install -e .",
-      "binary_path": "python3 -m mcp_nixos.server",
-      "install_path": "python3 -m mcp_nixos.server",
-      "capabilities": ["nixos", "packages", "search", "configuration"],
-      "default_args": [],
-      "environment": {
-        "ELASTICSEARCH_URL": "https://search.nixos.org/backend"
-      }
+      "description": "NixOS package and configuration search MCP server"
+    },
+    "tailwind-svelte-assistant": {
+      "enabled": true,   // Currently ENABLED
+      "type": "node",
+      "description": "Tailwind CSS and SvelteKit documentation MCP server"
+    },
+    "context7": {
+      "enabled": true,   // Currently ENABLED
+      "type": "node",
+      "description": "Up-to-date code documentation for LLMs"
     }
   }
 }
 ```
 
-### Adding New Servers
+### Managing Servers
 
-To add a new MCP server:
+#### Enable/Disable Servers
+1. **Edit `config/servers.json`** - Set `"enabled"` to `true` or `false`
+2. **Run `make update-config`** - Apply changes without rebuilding
+3. **Check status** - Run `make status` to verify
 
-1. **Edit `config/servers.json`** - Add your server configuration
-2. **Run `make rebuild`** - Rebuild and restart the container
-3. **Update Claude Desktop config** - Add the new server to your MCP configuration
+#### Add New Servers
+1. **Edit `config/servers.json`** - Add your server configuration with `"enabled": true`
+2. **Run `make rebuild`** - Rebuild container with new server
+3. **Update Claude Code config** - Add SSH command for new server
 
 ### Supported Server Types
 

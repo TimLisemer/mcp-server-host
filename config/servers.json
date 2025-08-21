@@ -36,8 +36,33 @@
       "build_command": "npm install && npm run build",
       "binary_path": "dist/index.js",
       "install_path": "",
-      "capabilities": ["svelte", "tailwind", "documentation", "snippets", "components"],
+      "capabilities": [
+        "svelte",
+        "tailwind",
+        "documentation",
+        "snippets",
+        "components"
+      ],
       "default_args": [],
+      "environment": {
+        "NODE_ENV": "production"
+      }
+    },
+    "context7": {
+      "enabled": true,
+      "type": "node",
+      "description": "Up-to-date code documentation for LLMs and AI code editors",
+      "repository": "",
+      "build_command": "npm install -g @upstash/context7-mcp",
+      "binary_path": "npx",
+      "install_path": "npx",
+      "capabilities": [
+        "documentation",
+        "code-examples",
+        "real-time",
+        "version-specific"
+      ],
+      "default_args": ["-y", "@upstash/context7-mcp"],
       "environment": {
         "NODE_ENV": "production"
       }
